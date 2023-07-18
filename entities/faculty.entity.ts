@@ -28,7 +28,7 @@ export class Faculty {
     @OneToMany(() => DepartmentFaculty, (df) => df.facultyId)
     @JoinColumn({ name: 'department_faculty_id' })
     @Column({ nullable: true, name: 'department_course_id', type: 'integer' })
-    departmentCourseId: DepartmentFaculty[];
+    departmentFacultyId: DepartmentFaculty[];
 
 
     @Column({ name: 'dml_status' })
