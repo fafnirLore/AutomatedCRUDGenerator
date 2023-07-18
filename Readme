@@ -1,0 +1,6 @@
+index.js is the main controller of the project => start point of task
+
+
+dtoCreator is for the creation of the 5 default dtos from the boilerplate
+entityReader reads entity(input) and returns a obj containing attr, datatype, detail
+historyEntityContent returns the content for the entitu class in history.entity 
