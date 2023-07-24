@@ -16,7 +16,7 @@ const projDirCreator = require('./projDirCreator');
 const pathToEntity = './entities';
 const pathToNewProject = './my_pro';
 const buildFolder = './my_pro/src';
-const pathToBoiler = 'C:/Users/farquleet/Desktop/Current/HW/my_nest/boilerPlate';
+const pathToBoiler = 'C:/Users/farquleet/Desktop/Current/HiveWorx/my_nest/boilerPlate';
 const pathToTemplate = path.join(pathToBoiler, 'src');
 
 
@@ -40,7 +40,7 @@ entityFiles.forEach((file) => {
     entityFilename = file.replace(/\..*$/, ''); //extracting the filename without ext to be used for defining paths
     orgEntityFilename.push(entityFilename);
 
-    //create main folder for entity that will contain all resources for the entity
+    //create main folder in src for entity that will contain all resources for the said entity
     fd = path.join(buildFolder, entityFilename);
     if (!fs.existsSync(fd))
         fs.mkdirSync(fd);
@@ -49,10 +49,11 @@ entityFiles.forEach((file) => {
     fd = path.join(buildFolder, entityFilename, 'dto');
     if (!fs.existsSync(fd))
         fs.mkdirSync(fd)
-    //creation of default 5 dtos
+
+    //creation of default 5 dtos from boilerplate
     dtoCreator(path.join(pathToTemplate, 'status', 'dto'), fd, entity, entityFilename, pathToEntity);
 
-    //create dir in main folder for entities [entity, history-entity]
+    //create dir in main folder for entities which will contain [entity, history-entity]
     fd = path.join(buildFolder, entityFilename, 'entities')
     if (!fs.existsSync(fd))
         fs.mkdirSync(fd)
@@ -86,22 +87,31 @@ entityFiles.forEach((file) => {
             }
         }
     }
+    entityContent = entityContent.toString().replace(/\/\/.*/g, '');//removing comments
+    entityContent = entityContent.toString().replace(/import {.*} from [\'\"].*.entity[\'\"];?/g, ""); //removing former imports
+    //append the imports to the entityContent
     entityContent = imports + entityContent;
     // entityContent = entityContent.replace(/\[\]/g, '');
     fs.writeFileSync(path.join(fd, `${entityFilename}.entity.ts`), entityContent);
 
+    //copying content from entity for history entity
     let contentForHistory = fs.readFileSync(path.join(pathToEntity, `${entityFilename}.entity.ts`));
+    contentForHistory = contentForHistory.toString().replace(/\/\/.*/g, '');
     // historyContent = historyContent.toString().replace(/status/g, entity[0].toLowerCase() + entity.substring(1));
     // historyContent = historyContent.toString().replace(/Status/g, entity);
 
 
     fs.writeFileSync(path.join(fd, `${entityFilename}-history.entity.ts`), historyEntittyContent(entityObj, contentForHistory.toString()));
 
-
-    resourceCreator(pathToEntity, buildFolder, pathToTemplate, entity, entityFilename); //copies the content from the boilerplate for the entity res and paste in the buildFolder.
+    //copies the content from the boilerplate for the entity res and paste in the buildFolder.
+    //resource like controller, service and module
+    resourceCreator(pathToEntity, buildFolder, pathToTemplate, entity, entityFilename);
 });
 
+//copies files like util, auths which are constant
 constFileCopier(pathToTemplate, buildFolder, entityClassList);
+
+//add imports for the entities created in the app module
 appModuleChanges(path.join(buildFolder, 'app.module.ts'), entityClassList, orgEntityFilename);
 
 function appModuleChanges(pathAppModule, entityClassList, orgEntityFilename) {

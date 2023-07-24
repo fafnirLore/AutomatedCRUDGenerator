@@ -1,5 +1,6 @@
 
 function historyEntittyContent(entityObj, content) {
+    console.log("Entity", entityObj[0]);
     let entityName = content.match(/@Entity\('(.*?)'\)/)[1];
     entityName = entityName.slice(-1) === "s" ? entityName.slice(0, -1) : entityName;
     // console.log(entityName);
@@ -29,7 +30,7 @@ function historyEntittyContent(entityObj, content) {
         let columnEnd = entityContent.indexOf(';', columnStart) + 1;
         let columnDetail = entityContent.substring((columnStart), columnEnd);
 
-        let type = columnDetail.substring(columnDetail.lastIndexOf(':') + 2, columnDetail.indexOf(';')).trim().replace('[]','');
+        let type = columnDetail.substring(columnDetail.lastIndexOf(':') + 2, columnDetail.indexOf(';')).trim().replace('[]', '');
         entityContent = entityContent.replace(new RegExp(`${type}`, '\g'), 'number');
         entityContent = entityContent.replace(/\[\]/g, '');
         console.log(type);

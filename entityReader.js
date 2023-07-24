@@ -31,7 +31,7 @@ function entityReader(src) {
         }
         i = columnEnd;
 
-        entityObj.push({ attr: attr, type: type, detail: detail, relationshipEntity: type.replace('[]', '') });
+        entityObj.push({ attr: attr, type: type, detail: detail, relationshipEntity: "none" });
 
         if (columnEnd >= entityContent.lastIndexOf('@Column(')) { break; }
     }
@@ -44,11 +44,14 @@ function entityReader(src) {
         let columnDetail = entityContent.substring((columnStart), columnEnd);
 
         let attr = columnDetail.substring(columnDetail.lastIndexOf(')') + 1, columnDetail.lastIndexOf(':')).trim();
-        let type = columnDetail.substring(columnDetail.lastIndexOf(':') + 2, columnDetail.indexOf(';')).trim();
+        //6 because moving 6 indeces forward from mactching () 
+        let relationShip = columnDetail.substring(columnDetail.indexOf('() => ') + 6, columnDetail.indexOf(',')).trim();
+        let type = "";
 
         i = columnEnd;
         for (item of entityObj) {
             if (item.attr == attr) {
+                item.relationshipEntity = relationShip;
                 item.type = 'number';
                 item.detail = 'relation';
             }
