@@ -9,16 +9,19 @@ function resourceCreator(pathToEntity, buildFolder, pathToTemplate, entityClass,
 
             stats = fs.statSync(path.join(pathToTemplate, 'status', file));
             if (stats.isFile()) {
-                let content = fs.readFileSync(path.join(pathToTemplate, 'status', file));
-                content = content.toString().replace(/([-\/])status\b/g, `$1${orgEntityFilename}`);
-                content = content.toString().replace(/status/g, entityClass[0].toLowerCase() + entityClass.substring(1));
-                content = content.toString().replace(/Status/g, entityClass);
-                content = content.toString().replace(new RegExp(`dml${entityClass}`, 'g'), 'dmlStatus');
+                let content = fs.readFileSync(path.join(pathToTemplate, 'status', file));// reading file
+                content = content.toString().replace(/([-\/])status\b/g, `$1${orgEntityFilename}`);//replace certain keyword status in path imports
+                content = content.toString().replace(/status/g, entityClass[0].toLowerCase() + entityClass.substring(1));//replacing status with class name of entity with camel case
+                content = content.toString().replace(/Status/g, entityClass); //replacing Status with class name of entity with pascal case
+                content = content.toString().replace(new RegExp(`dml${entityClass}(?!Id)`, 'g'), 'dmlStatus');//undoing the change of dmlStatus due to above replace
 
+
+                //for role management
                 if (file.match(/controller/)) {
                     content = content.toString().replace(/Charges/g, entityClass);
                 }
 
+                
                 file = file.replace(/status/g, orgEntityFilename);
                 if (file.match(/service/g)) {
 
@@ -67,6 +70,7 @@ function resourceCreator(pathToEntity, buildFolder, pathToTemplate, entityClass,
 
                     }
                     //removal of biolerplate query from findAll function 
+                    //3 for because boilerplate has 3 default queries so to remove those 3 queries
                     for (let i = 0; i < 3; i++) {
 
                         let ifStart = content.indexOf('if', functionFindAllIter);

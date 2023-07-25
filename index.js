@@ -12,13 +12,17 @@ const constFileCopier = require('./constFileCopier');
 const entityReader = require('./entityReader');
 const historyEntittyContent = require('./historyEntityContent');
 const projDirCreator = require('./projDirCreator');
+const appModuleChanges = require('./appModuleChanges');
 
 const pathToEntity = './entities';
 const pathToNewProject = './my_pro';
-const buildFolder = './my_pro/src';
+const buildFolder = path.join(pathToNewProject, 'src');//path to src folder for new project
 const pathToBoiler = 'C:/Users/farquleet/Desktop/Current/HiveWorx/my_nest/boilerPlate';
-const pathToTemplate = path.join(pathToBoiler, 'src');
+const pathToTemplate = path.join(pathToBoiler, 'src');//path to src folder of boilerplate
 
+//if new project folder doesnot exist than create
+if (!fs.existsSync(pathToNewProject))
+    fs.mkdirSync(pathToNewProject);
 
 //creates directories in newProject folder through the directories from biolerplate
 projDirCreator(pathToBoiler, pathToNewProject);
@@ -59,7 +63,7 @@ entityFiles.forEach((file) => {
         fs.mkdirSync(fd)
 
     //copying the entities content from the outside to the buildFolder
-    let entityObj = entityReader(path.join(pathToEntity, `${entityFilename}.entity.ts`));
+    let entityObj = entityReader(path.join(pathToEntity, `${entityFilename}.entity.ts`)); //contains every attribute with its name, dataype, detail [column, primary, relation], relationship [none for attributes that are not relation]
     let imports = '';
     let entityContent = fs.readFileSync(path.join(pathToEntity, `${entityFilename}.entity.ts`));
     //importing classes for entities who have relation with other entities
@@ -67,7 +71,9 @@ entityFiles.forEach((file) => {
         if (item.detail == 'relation') {
             let entityName = item.relationshipEntity;
             let matches = entityName.match(/[A-Z]/g);
+
             if (entity == entityName) {
+                entityContent = entityContent.toString().replace(new RegExp(`${item.attr}: number;`, 'g'), `${item.attr}: ${item.relationshipEntity}${item.relationType === '@OneToMany' ? '[]' : ''};`)
                 continue;
             }
             if (matches && matches.length >= 2) {
@@ -79,24 +85,39 @@ entityFiles.forEach((file) => {
                         return '-' + p1.toLowerCase();
                     }
                 });
-                imports += `import {${entityName}} from 'src/${folderName}/entities/${folderName}.entity'\n`
+                imports += `import {${entityName}} from 'src/${folderName}/entities/${folderName}.entity';\n`
             }
             else {
-                imports += `import {${entityName}} from 'src/${entityName.toLowerCase()}/entities/${entityName.toLowerCase()}.entity'\n`
+                imports += `import {${entityName}} from 'src/${entityName.toLowerCase()}/entities/${entityName.toLowerCase()}.entity';\n`
 
             }
+            //if relationtype is oneTomany then we need a obj array else a obj
+            entityContent = entityContent.toString().replace(new RegExp(`${item.attr}: .*;`, 'g'), `${item.attr}: ${item.relationshipEntity}${item.relationType === '@OneToMany' ? '[]' : ''};`);
         }
     }
     entityContent = entityContent.toString().replace(/\/\/.*/g, '');//removing comments
     entityContent = entityContent.toString().replace(/import {.*} from [\'\"].*.entity[\'\"];?/g, ""); //removing former imports
+
+    entityContent = entityContent.toString().replace('export const jsonSchemas = validationMetadatasToSchemas()', '').replace('import { validationMetadatasToSchemas } from \'class-validator-jsonschema\';', '');//removing validationSchema as it is of no use
+
     //append the imports to the entityContent
-    entityContent = imports + entityContent;
+    let dmlString = "";
+    if (!entityContent.includes('dmlStatus')) {
+        dmlString = `\n\t@Column( {name: 'dml_status', nullable: false })\n\t@IsOptional()\n\t@IsNumber()\n\tdmlStatus?: number;`
+    }
+    if (!entityContent.includes('dmlUserId')) {
+        dmlString += `\n\t@Column( {name: 'dml_user_id', nullable: false })\n\t@IsOptional()\n\t@IsNumber()\n\tdmlUserId?: number;`
+    }
+
+    entityContent = imports + entityContent.toString().slice(0, entityContent.lastIndexOf('}')) + dmlString + '\n}';
+
     // entityContent = entityContent.replace(/\[\]/g, '');
     fs.writeFileSync(path.join(fd, `${entityFilename}.entity.ts`), entityContent);
 
     //copying content from entity for history entity
-    let contentForHistory = fs.readFileSync(path.join(pathToEntity, `${entityFilename}.entity.ts`));
+    let contentForHistory = fs.readFileSync(path.join(fd, `${entityFilename}.entity.ts`));
     contentForHistory = contentForHistory.toString().replace(/\/\/.*/g, '');
+    contentForHistory = contentForHistory.toString().replace(/import {.*} from [\'\"].*.entity[\'\"];?/g, ""); //removing former imports
     // historyContent = historyContent.toString().replace(/status/g, entity[0].toLowerCase() + entity.substring(1));
     // historyContent = historyContent.toString().replace(/Status/g, entity);
 
@@ -111,30 +132,5 @@ entityFiles.forEach((file) => {
 //copies files like util, auths which are constant
 constFileCopier(pathToTemplate, buildFolder, entityClassList);
 
-//add imports for the entities created in the app module
+//add imports for the entities created in the app module 
 appModuleChanges(path.join(buildFolder, 'app.module.ts'), entityClassList, orgEntityFilename);
-
-function appModuleChanges(pathAppModule, entityClassList, orgEntityFilename) {
-    let content = fs.readFileSync(pathAppModule);
-    content = content.toString();
-    let importList = '';
-    let imports = '';
-
-    for (item in entityClassList) {
-        importList += `\nimport { ${entityClassList[item]}Module } from './${orgEntityFilename[item]}/${orgEntityFilename[item]}.module';`
-
-    }
-    for (item of entityClassList) {
-        imports += `${item}Module,`;
-    }
-
-    //changes for the import paths in the app module
-    content = content.replace(`import { StatusModule } from './status/status.module';`, '');
-    content = content.replace(`import { StatusTypeModule } from './status-type/status-type.module';`, importList);
-    //changes for the imports in the app module
-    content = content.replace(/StatusTypeModule,/g, '');
-    content = content.replace(/StatusModule,/g, imports);
-
-    fs.writeFileSync(pathAppModule, content);
-
-}

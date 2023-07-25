@@ -1,8 +1,8 @@
 
 function historyEntittyContent(entityObj, content) {
-    console.log("Entity", entityObj[0]);
+
     let entityName = content.match(/@Entity\('(.*?)'\)/)[1];
-    entityName = entityName.slice(-1) === "s" ? entityName.slice(0, -1) : entityName;
+    // entityName = entityName.slice(-1) === "s" ? entityName.slice(0, -1) : entityName;
     // console.log(entityName);
     content = content.replace(/@Entity(.*)/, (match, p, offset) => {
         return match.replace('\')', '_history\')');
@@ -33,12 +33,12 @@ function historyEntittyContent(entityObj, content) {
         let type = columnDetail.substring(columnDetail.lastIndexOf(':') + 2, columnDetail.indexOf(';')).trim().replace('[]', '');
         entityContent = entityContent.replace(new RegExp(`${type}`, '\g'), 'number');
         entityContent = entityContent.replace(/\[\]/g, '');
-        console.log(type);
+
 
         if (columnStart == -1) { break; }
     }
 
-    entityContent = entityContent.replace(/@.*To.*/g, '');
+    entityContent = entityContent.replace(/@.*To.*/g, '').replace(/\(.*\) => .*\n.*\n.*/g, ''); //removing the relationship decorator
     entityContent = entityContent.replace(/@(?!Column|PrimaryGeneratedColumn)(.*)/g, '').replace(/\n{2,}/g, '\n');
     // entityContent = newPrimay + entityContent;
     // let historyColumns = 'number;\n';

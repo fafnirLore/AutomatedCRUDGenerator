@@ -31,7 +31,7 @@ function entityReader(src) {
         }
         i = columnEnd;
 
-        entityObj.push({ attr: attr, type: type, detail: detail, relationshipEntity: "none" });
+        entityObj.push({ attr: attr, type: type, detail: detail, relationshipEntity: "none", relationType: "none" });
 
         if (columnEnd >= entityContent.lastIndexOf('@Column(')) { break; }
     }
@@ -42,6 +42,7 @@ function entityReader(src) {
         let columnStart = match.index;
         let columnEnd = entityContent.indexOf(';', columnStart) + 1;
         let columnDetail = entityContent.substring((columnStart), columnEnd);
+        let relationType = columnDetail.match(/@.*To.*/g)[0].substring(0, columnDetail.indexOf('(')).trim(); //getting the decorator for relation 
 
         let attr = columnDetail.substring(columnDetail.lastIndexOf(')') + 1, columnDetail.lastIndexOf(':')).trim();
         //6 because moving 6 indeces forward from mactching () 
@@ -54,6 +55,7 @@ function entityReader(src) {
                 item.relationshipEntity = relationShip;
                 item.type = 'number';
                 item.detail = 'relation';
+                item.relationType = relationType;
             }
         }
 
