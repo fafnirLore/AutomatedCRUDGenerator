@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs')
 
 //copies the constant files from the boilerplate to buildFolder
-//also creates roles for every endpoint
+//also creates roles for every endpoint in role.guard
 /*
 
 

@@ -21,7 +21,7 @@ function resourceCreator(pathToEntity, buildFolder, pathToTemplate, entityClass,
                     content = content.toString().replace(/Charges/g, entityClass);
                 }
 
-                
+
                 file = file.replace(/status/g, orgEntityFilename);
                 if (file.match(/service/g)) {
 
@@ -37,6 +37,7 @@ function resourceCreator(pathToEntity, buildFolder, pathToTemplate, entityClass,
                     for (item of entityObj) {
                         if (item.detail == 'column') {
                             switch (item.type) {
+                                //cases for handling different datatypes for custom queries
                                 case 'number':
                                     newQurey += `\n\tif (Number(params?.${item.attr}) > 0) {\n`;
                                     newQurey += `sql += \`${entityClass}.${item.attr} = params?.${item.attr} AND \`;\n}`;
@@ -50,6 +51,7 @@ function resourceCreator(pathToEntity, buildFolder, pathToTemplate, entityClass,
                             }
                         }
                         else if (item.detail == 'relation') {
+                            //creating relationalStatement which will replace default relational statement from boilerplate
                             relationPresent = true;
                             relationStatement += `${item.attr}: true, `
 
@@ -57,7 +59,7 @@ function resourceCreator(pathToEntity, buildFolder, pathToTemplate, entityClass,
                         }
                     }
                     if (relationPresent) {
-
+                        // replacing default relational statement with modified statement
                         content = content.toString().replace(/relations:.*{.*}/g, ` relations: {${relationStatement}}`);
 
                         //joins correction 
@@ -65,6 +67,7 @@ function resourceCreator(pathToEntity, buildFolder, pathToTemplate, entityClass,
 
                     }
                     else {
+                        //remove joining statements if no relation exists
                         content = content.toString().replace(/relations:.*{.*},/g, '');
                         content = content.toString().replace(/.leftJoinAndSelect(.*)/, '');
 

@@ -39,17 +39,7 @@ function historyEntittyContent(entityObj, content) {
     }
 
     entityContent = entityContent.replace(/@.*To.*/g, '').replace(/\(.*\) => .*\n.*\n.*/g, ''); //removing the relationship decorator
-    entityContent = entityContent.replace(/@(?!Column|PrimaryGeneratedColumn)(.*)/g, '').replace(/\n{2,}/g, '\n');
-    // entityContent = newPrimay + entityContent;
-    // let historyColumns = 'number;\n';
-    // for (item of entityObj) {
-    //     historyColumns += `\n\t@Column({name: '${item.attr}'})\n\t${item.attr}: ${item.type};`;
-    // }
-
-    // console.log(historyColumns);
-    // entityContent = entityContent.replace(/@Column(.*)\n.*/g, ''); //remove all attr from entity other than historyId
-    // entityContent = entityContent.trim();
-    // entityContent = entityContent.replace(/number;/, historyColumns);
+    entityContent = entityContent.replace(/@(?!Column|PrimaryGeneratedColumn)(.*)/g, '').replace(/\n{2,}/g, '');
     content = content.replace(content.substring(classStart + 1, classEnd), entityContent);
     return content;
 }

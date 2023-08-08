@@ -1,4 +1,7 @@
 /entities_past*
 /my_pro
 AutomatedCRUD.zip
-/*entities
+/uni_entities
+/insertScript
+/.vscode
+/node_modules

@@ -36,13 +36,14 @@ let orgEntityFilename = [];
 
 //iterate through every entity in input entities
 entityFiles.forEach((file) => {
-    // console.log(file);
     let content = fs.readFileSync(path.join(pathToEntity, file)).toString();
-    let entity = content.match(/export class .*{/)[0].replace('export class ', '').replace('{', '').trim();
-    entityClassList.push(entity);
 
-    entityFilename = file.replace(/\..*$/, ''); //extracting the filename without ext to be used for defining paths
-    orgEntityFilename.push(entityFilename);
+    //extracting entityname from entity file
+    let entity = content.match(/export class.*/)[0].replace('export class ', '').replace('{', '').trim();
+    entityClassList.push(entity);//list of name of entity classes
+
+    entityFilename = file.replace(/\..*$/, ''); //extracting the filename without extension to be used for defining paths
+    orgEntityFilename.push(entityFilename);//filename of entity files
 
     //create main folder in src for entity that will contain all resources for the said entity
     fd = path.join(buildFolder, entityFilename);
@@ -70,14 +71,16 @@ entityFiles.forEach((file) => {
     for (item of entityObj) {
         if (item.detail == 'relation') {
             let entityName = item.relationshipEntity;
-            let matches = entityName.match(/[A-Z]/g);
+            let matches = entityName.match(/[A-Z]/g);//looks for uppercase letters in entityname
 
+            //no need for setting path for the relationship with the same entity as class
             if (entity == entityName) {
                 entityContent = entityContent.toString().replace(new RegExp(`${item.attr}: number;`, 'g'), `${item.attr}: ${item.relationshipEntity}${item.relationType === '@OneToMany' ? '[]' : ''};`)
                 continue;
             }
+            //if upper case letters are  >= 2
             if (matches && matches.length >= 2) {
-
+                //replacing upper case letter with '-' and lower case letter for path
                 let folderName = entityName.replace(/([A-Z])/g, (match, p1, offset) => {
                     if (offset === 0) {
                         return match.toLowerCase();
@@ -88,6 +91,7 @@ entityFiles.forEach((file) => {
                 imports += `import {${entityName}} from 'src/${folderName}/entities/${folderName}.entity';\n`
             }
             else {
+                //if entityname has < 2 upper case letter then
                 imports += `import {${entityName}} from 'src/${entityName.toLowerCase()}/entities/${entityName.toLowerCase()}.entity';\n`
 
             }
@@ -95,12 +99,12 @@ entityFiles.forEach((file) => {
             entityContent = entityContent.toString().replace(new RegExp(`${item.attr}: .*;`, 'g'), `${item.attr}: ${item.relationshipEntity}${item.relationType === '@OneToMany' ? '[]' : ''};`);
         }
     }
-    entityContent = entityContent.toString().replace(/\/\/.*/g, '');//removing comments
-    entityContent = entityContent.toString().replace(/import {.*} from [\'\"].*.entity[\'\"];?/g, ""); //removing former imports
+    //    entityContent = entityContent.toString().replace(/\/\/.*/g, '');//removing comments
+    entityContent = entityContent.toString().replace(/import.*from.*[\'\"].*.entity[\'\"];?/g, ""); //removing former imports
 
     entityContent = entityContent.toString().replace('export const jsonSchemas = validationMetadatasToSchemas()', '').replace('import { validationMetadatasToSchemas } from \'class-validator-jsonschema\';', '');//removing validationSchema as it is of no use
 
-    //append the imports to the entityContent
+    //incase of dml attributes are not present in entity add them 
     let dmlString = "";
     if (!entityContent.includes('dmlStatus')) {
         dmlString = `\n\t@Column( {name: 'dml_status', nullable: false })\n\t@IsOptional()\n\t@IsNumber()\n\tdmlStatus?: number;`
@@ -108,16 +112,17 @@ entityFiles.forEach((file) => {
     if (!entityContent.includes('dmlUserId')) {
         dmlString += `\n\t@Column( {name: 'dml_user_id', nullable: false })\n\t@IsOptional()\n\t@IsNumber()\n\tdmlUserId?: number;`
     }
-
+    //append the imports to the entityContent
     entityContent = imports + entityContent.toString().slice(0, entityContent.lastIndexOf('}')) + dmlString + '\n}';
 
     // entityContent = entityContent.replace(/\[\]/g, '');
+    //writing to the buildFolder entity 
     fs.writeFileSync(path.join(fd, `${entityFilename}.entity.ts`), entityContent);
 
     //copying content from entity for history entity
     let contentForHistory = fs.readFileSync(path.join(fd, `${entityFilename}.entity.ts`));
     contentForHistory = contentForHistory.toString().replace(/\/\/.*/g, '');
-    contentForHistory = contentForHistory.toString().replace(/import {.*} from [\'\"].*.entity[\'\"];?/g, ""); //removing former imports
+    contentForHistory = contentForHistory.toString().replace(/import.*from.*[\'\"].*.entity[\'\"];?/g, ""); //removing former imports
     // historyContent = historyContent.toString().replace(/status/g, entity[0].toLowerCase() + entity.substring(1));
     // historyContent = historyContent.toString().replace(/Status/g, entity);
 

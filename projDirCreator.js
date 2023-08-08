@@ -3,7 +3,7 @@ const fs = require('fs')
 
 /*
 create directories present in src to des
-except the directories starting with status or node_module
+except the directories starting with status or node_module from boilerplate
 */
 function projDirCreator(src, des) {
 
